@@ -12,15 +12,35 @@ app.config["SECRET_KEY"] = "누구도알수없는보안이진짜최고인암호�
 def index():
     return render_template('main_new.html')
 
+#login_new
+@app.route('/login_new')
+def login_new():
+    return render_template('login_new.html')
+
+#거래소
+@app.route('/market')
+def market():
+    return render_template('market.html')
+
+#마이페이지
+@app.route('/mypage')
+def mypage():
+    return render_template('mypage.html')
+
+#로그인 후 메인 페이지
+@app.route('/main_after_login')
+def main_after_login():
+    return render_template('main_after_login.html')
+
 #로그인
-@app.route('/login', methods = ['POST', 'GET'])
+@app.route('/login_new', methods = ['POST', 'GET'])
 def login():
     if request.method == 'POST':
         if collection.find_one({"_id":request.form['id']}):
             id = request.form['id']
             id_list = collection.find_one({"_id":id})
-            if request.form['pw'] == id_list['password']:
-                session['username'] = id
+            if request.form['password'] == id_list['password']:
+                session['id'] = id
                 flash('You have logged in successfully as {}'.format(id))
                 return render_template('main_after_login.html') 
             else:
@@ -28,7 +48,7 @@ def login():
                 return render_template('login_new.html')
         else:
             flash("존재하지 않는 아이디입니다! 회원가입 창으로 이동합니다.")
-            return render_template('signup.html') 
+            return render_template('signup.html')
     else:
         return render_template('login_new.html')  
 
@@ -38,7 +58,7 @@ def signup():
     if request.method == 'POST':
         # 폼 데이터에서 필드 값 추출
         username = request.form['username']
-        email = request.form['email']
+        id = request.form['id']
         password = request.form['password']
         password_confirm = request.form['password_confirm']
         
@@ -47,14 +67,14 @@ def signup():
             flash("비밀번호가 일치하지 않습니다.")
             return render_template('signup.html')
         
-        # 이미 존재하는 이메일인지 확인
-        existing_user = collection.find_one({"_id": email})
+        # 이미 존재하는 id인지 확인
+        existing_user = collection.find_one({"_id": id})
         if existing_user:
-            flash("이미 존재하는 이메일입니다.")
+            flash("이미 존재하는 id입니다.")
             return render_template('signup.html')
 
         # MongoDB에 데이터 삽입
-        collection.insert_one({"_id": email, "pw": password, "name": username})
+        collection.insert_one({"_id": id, "pw": password, "name": username})
 
         return redirect('/')  # 회원가입 후 메인 페이지로 리디렉션
 
