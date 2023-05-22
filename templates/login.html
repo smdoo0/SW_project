@@ -1,0 +1,20 @@
+{%with messages = get_flashed_messages()%}
+{%if messages %}
+  <script type="text/javascript">
+    alert("{{messages[-1]}}");
+  </script>
+  {%endif%}
+{%endwith%}
+
+<!DOCTYPE html>
+<html>
+<body>
+    <form action = "http://localhost:5000/login" method ="post">
+        <h2>Login page</h2>
+        <p>ID : <input type = "text" name = "id" /></p>
+        <p>Password : <input type = "password" name = "pw" /></p>
+        <p><input type = "submit" value = "submit" /></p>
+    </form>
+</body>
+</html>
+    

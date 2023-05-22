@@ -1,0 +1,63 @@
+{%with messages = get_flashed_messages()%}
+{%if messages %}
+  <script type="text/javascript">
+    alert("{{messages[-1]}}");
+  </script>
+  {%endif%}
+{%endwith%}
+
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+		form {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			margin-top: 100px;
+		}
+		
+		label {
+			display: block;
+			margin-bottom: 10px;
+		}
+		
+		input[type="text"],
+		input[type="password"] {
+			padding: 10px;
+			margin-bottom: 20px;
+			width: 300px;
+			border: 1px solid #ccc;
+			border-radius: 4px;
+			font-size: 16px;
+		}
+		
+		input[type="submit"] {
+			background-color: #4CAF50;
+			color: white;
+			padding: 10px 20px;
+			border: none;
+			border-radius: 4px;
+			cursor: pointer;
+			font-size: 16px;
+		}
+		
+		input[type="submit"]:hover {
+			background-color: #3e8e41;
+		}
+	</style>
+</head>
+
+<body>
+  <h1>회원가입</h1>
+	<form action = "http://localhost:5000/signup" method ="post">
+		<label for="username">ID:</label>
+		<input type="text" id="username" name="username">
+		<label for="password">PW:</label>
+		<input type="password" id="password" name="password">
+		<label for="password_confirm">비밀번호 확인:</label>
+		<input type="password" id="password_confirm" name="password_confirm"><br>
+		<input type="submit" value="회원가입">
+	</form>
+</body>
+</html>
