@@ -12,11 +12,6 @@ app.config["SECRET_KEY"] = "누구도알수없는보안이진짜최고인암호�
 def index():
     return render_template('main_new.html')
 
-#login_new
-@app.route('/login_new')
-def login_new():
-    return render_template('login_new.html')
-
 #거래소
 @app.route('/market')
 def market():
@@ -39,7 +34,7 @@ def login():
         if collection.find_one({"_id":request.form['id']}):
             id = request.form['id']
             id_list = collection.find_one({"_id":id})
-            if request.form['password'] == id_list['password']:
+            if request.form['pw'] == id_list['pw']:
                 session['id'] = id
                 flash('You have logged in successfully as {}'.format(id))
                 return render_template('main_after_login.html') 
