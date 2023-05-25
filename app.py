@@ -5,8 +5,10 @@ db = cluster["software_engineering"]
 #유저 정보 db
 users = db["test"]
 #초기 코인 정보 db
-initialCoin = db["initalCoin"]
+initialCoin = db["initialCoin"]
 #initialCoin.insert_one({"_id": 'initialCoin', "number": 100, "price": 100})
+
+#유저 posted coin db
 postedCoin = db["postedCoin"]
 
 app = Flask(__name__)
@@ -77,17 +79,23 @@ def signup():
 
     return render_template('signup.html')
 
-#코인 판매 페이지
+#코인 판매 페이지(post)
 @app.route('/sellcoin', methods = ['POST', 'GET'])
 def sellcoin():
     #로그인 유지용 username 저장
     username = session.get('username')
     
     if request.method == 'POST':
-        
+        number = request.form.get('number')  #판매할 코인 개수
+        price = request.form.get('price')    #판매할 코인의 개당 가격
+
+        # 수행할 작업 수행
+        coin_info = {"_id": username, "quantity": number, "price": price}
+        postedCoin.insert_one(coin_info)
+
         return render_template('sellcoin.html', username=username)
     else:
-        return render_template('sellcoin.html', username=username)   
+        return render_template('sellcoin.html', username=username)
 
 
 #코인 구매 페이지
@@ -97,15 +105,18 @@ def buycoin():
     username = session.get('username')
     
     #세션에 저장된 유저가 post한 코인 정보 업데이트
-    
-    post_list = postedCoin.find_one({"_id":'initialCoin'})
+    initial_list = initialCoin.find_one({"_id":initialCoin})
+    cursor = db[postedCoin].find()
+    post_list = []
+    for post in cursor:
+        post_list.append(post)  #post_list 에는 postedCoin db에 있는 딕셔너리들 저장
+        
     session["initial_number"] = initial_list['number']
     session["initial_price"] = initial_list['price']
-    initial_number = session["initial_number"]
-    initial_price = session["initial_price"]
+    initial_number = session["initial_number"]   #초기 코인 남은 개수
+    initial_price = session["initial_price"]     #초기 코인 개당 가격
     
     if request.method == 'POST':
-        
         return render_template('buycoin.html', username=username)
     else:
         return render_template('buycoin.html', username=username)      
