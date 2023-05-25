@@ -4,6 +4,10 @@ cluster = MongoClient("mongodb+srv://smdoo:Me2sChTXYh49P3Lk@cluster0.ydrdzo1.mon
 db = cluster["software_engineering"]
 #유저 정보 db
 users = db["test"]
+#초기 코인 정보 db
+initialCoin = db["initalCoin"]
+#initialCoin.insert_one({"_id": 'initialCoin', "number": 100, "price": 100})
+postedCoin = db["postedCoin"]
 
 app = Flask(__name__)
 app.secret_key = "SECRET_KEY"
@@ -12,11 +16,6 @@ app.secret_key = "SECRET_KEY"
 @app.route('/')
 def index():
     return render_template('main_new.html')
-
-#거래소
-@app.route('/market')
-def market():
-    return render_template('market.html')
 
 #마이페이지
 @app.route('/mypage')
@@ -27,7 +26,7 @@ def mypage():
 @app.route('/main_after_login')
 def main_after_login():
     username = session.get('username')
-    return render_template('main_after_login.html',username=username)
+    return render_template('main_after_login.html', username=username)
 
 #로그인
 @app.route('/login_new', methods = ['POST', 'GET'])
@@ -74,9 +73,64 @@ def signup():
         users.insert_one({"_id": id, "pw": password, "name": username})
         flash("회원가입 성공!")
 
-        return redirect('/')  # 회원가입 후 메인 페이지로 리디렉션
+        return redirect('login_new')  # 회원가입 후 로그인 페이지로 리디렉션
 
     return render_template('signup.html')
+
+#코인 판매 페이지
+@app.route('/sellcoin', methods = ['POST', 'GET'])
+def sellcoin():
+    #로그인 유지용 username 저장
+    username = session.get('username')
+    
+    if request.method == 'POST':
+        
+        return render_template('sellcoin.html', username=username)
+    else:
+        return render_template('sellcoin.html', username=username)   
+
+
+#코인 구매 페이지
+@app.route('/buycoin', methods = ['POST', 'GET'])
+def buycoin():
+    #로그인 유지용 username 저장
+    username = session.get('username')
+    
+    #세션에 저장된 유저가 post한 코인 정보 업데이트
+    
+    post_list = postedCoin.find_one({"_id":'initialCoin'})
+    session["initial_number"] = initial_list['number']
+    session["initial_price"] = initial_list['price']
+    initial_number = session["initial_number"]
+    initial_price = session["initial_price"]
+    
+    if request.method == 'POST':
+        
+        return render_template('buycoin.html', username=username)
+    else:
+        return render_template('buycoin.html', username=username)      
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #회원전용기능 알림 메세지
 @app.route('/loginfirst')
@@ -85,12 +139,11 @@ def loginfirst():
     return redirect(url_for('login'))
 
 #로그아웃
-@app.route('/logout', methods=['POST', 'GET'])
+@app.route('/logout')
 def logout():
-    if request.method == 'POST':
-        session.pop('username', None)
-        flash('로그아웃 되었습니다.')
-    return render_template('main_new.html')
+    session.pop('username', None)
+    flash('로그아웃 되었습니다.')
+    return redirect('/')
 
 if __name__ == '__main__':
     app.run(debug = True)
