@@ -88,6 +88,59 @@ def signup():
 
     return render_template('signup.html')
 
+# 입금
+@app.route('/add_money', methods=['GET','POST'])
+def add_money():
+    username = session['username']
+    user_info = users.find_one({"_id":username})
+    coin = user_info["coin"]
+    money = user_info["money"]
+    
+    if request.method == 'POST' :
+        add_money = int(request.form['addmoney'])
+        if add_money<1:
+            flash("1원보다 적은 금액은 입금할 수 없습니다!")
+            return redirect(url_for('add_money')) 
+        else:
+            money += add_money
+            users.update_one({"_id": username}, {"$set": { "money": money } })
+            flash("{}원이 정상적으로 입금되었습니다!".format(add_money))
+            return redirect(url_for('mypage')) 
+            
+    else:
+        return render_template('add_money.html', username=username, coin = coin, money = money)
+    
+#출금
+@app.route('/withdraw', methods=['GET','POST'])
+def withdraw():
+    username = session['username']
+    user_info = users.find_one({"_id":username})
+    coin = user_info["coin"]
+    money = user_info["money"]
+    
+    if request.method == 'POST' :
+        withdraw = int(request.form['withdraw'])
+        if withdraw<1:
+            flash("1원보다 적은 금액은 출금할 수 없습니다!")
+            return redirect(url_for('withdraw')) 
+        elif money<withdraw:
+            flash("계좌 잔액보다 많은 금액은 출금할 수 없습니다!")
+            return redirect(url_for('withdraw')) 
+        
+        else:
+            money -= withdraw
+            users.update_one({"_id": username}, {"$set": { "money": money } })
+            flash("{}원이 정상적으로 출금되었습니다!".format(withdraw))
+            return redirect(url_for('mypage')) 
+            
+    else:
+        return render_template('withdraw.html', username=username, coin = coin, money = money)
+
+
+
+
+
+
 #코인 판매 페이지(post)
 @app.route('/sellcoin', methods = ['POST', 'GET'])
 def sellcoin():
@@ -128,7 +181,7 @@ def buycoin():
     if request.method == 'POST':
         return render_template('buycoin.html', username=username)
     else:
-        return render_template('buycoin.html', username=username)      
+        return render_template('buycoin.html', username=username)
 
 
 
