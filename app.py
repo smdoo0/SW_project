@@ -22,7 +22,16 @@ def index():
 #마이페이지
 @app.route('/mypage')
 def mypage():
-    return render_template('mypage.html')
+    username = session['username']
+    user_info = users.find_one({"_id":username})
+    coin = user_info["coin"]
+    money = user_info["money"]
+    
+    if request.method == 'POST':
+        username = session['username']
+        
+    else:
+        return render_template('mypage.html', username=username, coin = coin, money = money) 
 
 #로그인 후 메인페이지
 @app.route('/main_after_login')
@@ -72,7 +81,7 @@ def signup():
             return render_template('signup.html')
 
         # MongoDB에 데이터 삽입
-        users.insert_one({"_id": id, "pw": password, "name": username})
+        users.insert_one({"_id": id, "pw": password, "name": username, "coin": 0, "money": 0})
         flash("회원가입 성공!")
 
         return redirect('login_new')  # 회원가입 후 로그인 페이지로 리디렉션
