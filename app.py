@@ -3,10 +3,10 @@ from pymongo import MongoClient
 cluster = MongoClient("mongodb+srv://smdoo:Me2sChTXYh49P3Lk@cluster0.ydrdzo1.mongodb.net/?retryWrites=true&w=majority")
 db = cluster["software_engineering"]
 #유저 정보 db
-users = db["test"]
+users = db["user"]
 #초기 코인 정보 db
 initialCoin = db["initialCoin"]
-#initialCoin.insert_one({"_id": 'initialCoin', "number": 100, "price": 100})
+#initialCoin.insert_one({"_id": 'IC', "number": 100, "price": 100})
 
 #유저 posted coin db
 postedCoin = db["postedCoin"]
@@ -131,7 +131,7 @@ def withdraw():
             money -= withdraw
             users.update_one({"_id": username}, {"$set": { "money": money } })
             flash("{}원이 정상적으로 출금되었습니다!".format(withdraw))
-            return redirect(url_for('mypage')) 
+            return redirect(url_for('mypage'))
             
     else:
         return render_template('withdraw.html', username=username, coin = coin, money = money)
@@ -146,18 +146,24 @@ def withdraw():
 def sellcoin():
     #로그인 유지용 username 저장
     username = session.get('username')
-    
+    user_list = users.find_one({"_id":username}) # 현재 로그인 된 유저의 정보
+    user_coins = user_list['coin']                # 유저의 보유 코인 개수
     if request.method == 'POST':
-        number = request.form.get('number')  #판매할 코인 개수
-        price = request.form.get('price')    #판매할 코인의 개당 가격
-
-        # 수행할 작업 수행
-        coin_info = {"_id": username, "quantity": number, "price": price}
+        number = int(request.form.get('number'))  #판매할 코인 개수
+        price = int(request.form.get('price'))   #판매할 코인의 개당 가격
+        total_price = number * price
+        #if user_coins < number:
+        #    flash("판매하려는 코인 개수가 보유 수량보다 많습니다.")
+        #    return render_template('sellcoin.html', username=username, user_coins=user_coins)
+        
+        # postedCoin db에 정보 저장
+        coin_info = {"sellername": username, "quantity": number, "price": price, "total_price": total_price}
         postedCoin.insert_one(coin_info)
+        flash("POST Success!")
 
-        return render_template('sellcoin.html', username=username)
+        return render_template('sellcoin.html', username=username, user_coins=user_coins)
     else:
-        return render_template('sellcoin.html', username=username)
+        return render_template('sellcoin.html', username=username, user_coins=user_coins)
 
 
 #코인 구매 페이지
@@ -165,23 +171,82 @@ def sellcoin():
 def buycoin():
     #로그인 유지용 username 저장
     username = session.get('username')
-    
+    user_info = users.find_one({"_id":username})
+    coin = user_info["coin"]
+    money = user_info["money"]
+
     #세션에 저장된 유저가 post한 코인 정보 업데이트
-    initial_list = initialCoin.find_one({"_id":initialCoin})
-    cursor = db[postedCoin].find()
+    cursor = db.postedCoin.find()
     post_list = []
-    for post in cursor:
-        post_list.append(post)  #post_list 에는 postedCoin db에 있는 딕셔너리들 저장
-        
+    post_index = 1
+    for document in cursor:
+        data = {
+            "post_index": post_index,
+            "sellername": document["sellername"],
+            "quantity": document["quantity"],
+            "price": document["price"],
+            "total_price": document["total_price"]
+        }
+        current_post_id = document["_id"]
+        postedCoin.update_one({"_id": current_post_id}, {"$set": { "post_index": post_index } })
+        post_index += 1
+        post_list.append(data)
+    
+    #marketplace에 있는 초기 코인 정보 업데이트
+    initial_list = initialCoin.find_one({"_id":'IC'})
     session["initial_number"] = initial_list['number']
     session["initial_price"] = initial_list['price']
     initial_number = session["initial_number"]   #초기 코인 남은 개수
     initial_price = session["initial_price"]     #초기 코인 개당 가격
     
+    # 페이지 번호 가져오기 (기본값: 1)
+    page = int(request.args.get('page', 1))
+    items_per_page = 6  # 페이지당 아이템 수
+    
+    # 페이징 처리
+    start_index = (page - 1) * items_per_page
+    end_index = start_index + items_per_page
+    paginated_documents = post_list[start_index:end_index]
+    
+    # 다음 페이지 여부 체크
+    has_more = len(post_list) > end_index
+    
     if request.method == 'POST':
-        return render_template('buycoin.html', username=username)
+        initial_buy = int(request.form['initialbuy'])
+        post_index_to_buy = int(request.form['post_index_to_buy'])
+        
+        
+        
+        #####마켓플레이스의 초기 코인을 구매하는 경우와 유저가 post한 코인을 구매하는 경우 구분하기
+        
+        
+        
+        if initial_buy <1:
+            flash("1개 이상의 코인을 입력해주세요.")
+            return redirect(url_for('buycoin')) 
+        elif initial_buy > initial_number:
+            flash("마켓에 남아있는 코인이 부족합니다.")
+            return redirect(url_for('buycoin'))
+        elif money<initial_buy*100:
+            flash("계좌 잔액이 부족합니다!")
+            return redirect(url_for('buycoin'))
+        else:
+            money -= initial_buy*100
+            initial_number -= initial_buy
+            users.update_one({"_id": username}, {"$set": { "money": money, "coin":  coin+initial_buy} })
+            initialCoin.update_one({"_id": 'initialCoin'},{"$set": { "number": initial_number} })
+            postedCoin.delete_one({"post_index": post_index_to_buy})
+            flash("{}개의 코인을 정상적으로 구매하셨습니다!".format(initial_buy))
+            return redirect(url_for('buycoin')) 
+
+            
+        
+
+    
+    if request.method == 'POST':
+        return render_template('buycoin.html', username=username, page=page, initial_number=initial_number, initial_price=initial_price, documents=paginated_documents, has_more=has_more, coin=coin, money=money)
     else:
-        return render_template('buycoin.html', username=username)
+        return render_template('buycoin.html', username=username, page=page, initial_number=initial_number, initial_price=initial_price, documents=paginated_documents, has_more=has_more, coin=coin, money=money)
 
 
 
