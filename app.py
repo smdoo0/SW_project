@@ -212,32 +212,32 @@ def buycoin():
     has_more = len(post_list) > end_index
     
     if request.method == 'POST':
-        initial_buy = int(request.form['initialbuy'])
-        post_index_to_buy = int(request.form['post_index_to_buy'])
+        initial_buy = int(request.form['initialbuy'])   #구매하고자하는 초기 코인 개수
+        post_index_to_buy = int(request.form['post_index_to_buy'])   #구매하고자하는 post의 index
         
-        
-        
-        #####마켓플레이스의 초기 코인을 구매하는 경우와 유저가 post한 코인을 구매하는 경우 구분하기
-        
-        
-        
-        if initial_buy <1:
-            flash("1개 이상의 코인을 입력해주세요.")
-            return redirect(url_for('buycoin')) 
-        elif initial_buy > initial_number:
-            flash("마켓에 남아있는 코인이 부족합니다.")
-            return redirect(url_for('buycoin'))
-        elif money<initial_buy*100:
-            flash("계좌 잔액이 부족합니다!")
-            return redirect(url_for('buycoin'))
-        else:
-            money -= initial_buy*100
-            initial_number -= initial_buy
-            users.update_one({"_id": username}, {"$set": { "money": money, "coin":  coin+initial_buy} })
-            initialCoin.update_one({"_id": 'initialCoin'},{"$set": { "number": initial_number} })
-            postedCoin.delete_one({"post_index": post_index_to_buy})
-            flash("{}개의 코인을 정상적으로 구매하셨습니다!".format(initial_buy))
-            return redirect(url_for('buycoin')) 
+        #마켓플레이스의 초기 코인을 구매하는 경우
+        if 'buy_initial_coin' in request.form:    
+            if initial_buy <1:
+                flash("1개 이상의 코인을 입력해주세요.")
+                return render_template('buycoin.html', username=username, page=page, initial_number=initial_number, initial_price=initial_price, documents=paginated_documents, has_more=has_more, coin=coin, money=money)
+            elif initial_buy > initial_number:
+                flash("마켓에 남아있는 코인이 부족합니다.")
+                return render_template('buycoin.html', username=username, page=page, initial_number=initial_number, initial_price=initial_price, documents=paginated_documents, has_more=has_more, coin=coin, money=money)
+            elif money<initial_buy*100:
+                flash("계좌 잔액이 부족합니다!")
+                return render_template('buycoin.html', username=username, page=page, initial_number=initial_number, initial_price=initial_price, documents=paginated_documents, has_more=has_more, coin=coin, money=money)
+            else:
+                money -= initial_buy*100
+                initial_number -= initial_buy
+                users.update_one({"_id": username}, {"$set": { "money": money, "coin":  coin+initial_buy} })
+                initialCoin.update_one({"_id": 'initialCoin'},{"$set": { "number": initial_number} })
+                flash("{}개의 코인을 정상적으로 구매하셨습니다!".format(initial_buy))
+                return render_template('buycoin.html', username=username, page=page, initial_number=initial_number, initial_price=initial_price, documents=paginated_documents, has_more=has_more, coin=coin, money=money)
+        # 유저가 post한 코인을 구매하는 경우
+        elif 'buy_posted_coin' in request.form:
+            if 
+            
+            
 
             
         
