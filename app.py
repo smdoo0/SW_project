@@ -136,11 +136,6 @@ def withdraw():
     else:
         return render_template('withdraw.html', username=username, coin = coin, money = money)
 
-
-
-
-
-
 #코인 판매 페이지(post)
 @app.route('/sellcoin', methods = ['POST', 'GET'])
 def sellcoin():
@@ -152,9 +147,9 @@ def sellcoin():
         number = int(request.form.get('number'))  #판매할 코인 개수
         price = int(request.form.get('price'))   #판매할 코인의 개당 가격
         total_price = number * price
-        #if user_coins < number:
-        #    flash("판매하려는 코인 개수가 보유 수량보다 많습니다.")
-        #    return render_template('sellcoin.html', username=username, user_coins=user_coins)
+        if user_coins < number:
+            flash("판매하려는 코인 개수가 보유 수량보다 많습니다.")
+            return render_template('sellcoin.html', username=username, user_coins=user_coins)
         
         # postedCoin db에 정보 저장
         coin_info = {"sellername": username, "quantity": number, "price": price, "total_price": total_price}
@@ -213,7 +208,6 @@ def buycoin():
     
     if request.method == 'POST':
         initial_buy = int(request.form['initialbuy'])   #구매하고자하는 초기 코인 개수
-        post_index_to_buy = int(request.form['post_index_to_buy'])   #구매하고자하는 post의 index
         
         #마켓플레이스의 초기 코인을 구매하는 경우
         if 'buy_initial_coin' in request.form:    
@@ -229,24 +223,45 @@ def buycoin():
             else:
                 money -= initial_buy*100
                 initial_number -= initial_buy
-                users.update_one({"_id": username}, {"$set": { "money": money, "coin":  coin+initial_buy} })
-                initialCoin.update_one({"_id": 'initialCoin'},{"$set": { "number": initial_number} })
+                coin += initial_buy
+                users.update_one({"_id": username}, {"$set": { "money": money, "coin":  coin} })
+                initialCoin.update_one({"_id": 'IC'},{"$set": { "number": initial_number} })
                 flash("{}개의 코인을 정상적으로 구매하셨습니다!".format(initial_buy))
                 return render_template('buycoin.html', username=username, page=page, initial_number=initial_number, initial_price=initial_price, documents=paginated_documents, has_more=has_more, coin=coin, money=money)
         # 유저가 post한 코인을 구매하는 경우
+        # 1. 게시물 total_price가 보유 금액보다 비싸다면 구매 불가
+        # 2. 구매 가능하면 유저 코인 개수와 잔고, seller 코인 개수와 잔고, post 정보 업데이트
         elif 'buy_posted_coin' in request.form:
-            if 
+            post_index_to_buy = request.form.get('post_index')  # 구매하고자 하는 post의 index
+            post_to_buy = postedCoin.find_one({"post_index": post_index_to_buy}) # 구매하고자 하는 post 정보
+            quantity_to_buy = post_to_buy["quantity"]
+            total_price_to_buy = post_to_buy["total_price"]
+            seller_name_of_post = post_to_buy["sellername"]
             
+            seller_list = users.find_one({"_id": seller_name_of_post})
+            seller_coin = seller_list["coin"]
+            seller_money = seller_list["money"]
             
+            if money < total_price_to_buy:
+                flash("잔액이 부족합니다")
+                return render_template('buycoin.html', username=username, page=page, initial_number=initial_number, initial_price=initial_price, documents=paginated_documents, has_more=has_more, coin=coin, money=money)
+            else:
+                money -= total_price_to_buy
+                coin += quantity_to_buy        #구매한 유저의 잔액, 코인 개수 업데이트
+                users.update_one({"_id": username}, {"$set": { "money": money, "coin":  coin} })
+                
+                seller_money += total_price_to_buy
+                seller_coin -= quantity_to_buy       #판매한 유저의 잔액, 코인 개수 업데이트
+                users.update_one({"_id": seller_name_of_post}, {"$set": { "money": seller_money, "coin":  seller_coin} })
+                
+                postedCoin.delete_one({"post_index": post_index_to_buy})  #거래 완료된 post 삭제
 
-            
-        
-
+                flash("거래 성공!")
+                return render_template('buycoin.html', username=username, page=page, initial_number=initial_number, initial_price=initial_price, documents=paginated_documents, has_more=has_more, coin=coin, money=money)
     
-    if request.method == 'POST':
-        return render_template('buycoin.html', username=username, page=page, initial_number=initial_number, initial_price=initial_price, documents=paginated_documents, has_more=has_more, coin=coin, money=money)
     else:
         return render_template('buycoin.html', username=username, page=page, initial_number=initial_number, initial_price=initial_price, documents=paginated_documents, has_more=has_more, coin=coin, money=money)
+    
 
 
 

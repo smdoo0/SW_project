@@ -103,19 +103,15 @@
 										<p>판매 개수 : {{ document.quantity }}</p>
 										<P>총 가격 : {{ document.total_price }}</P>				
 									</header>
-									<p>구매할 게시물 번호를 입력하세요 :<input type="text" name="post_index_to_buy"></p>
-									<input style='padding : 0px 10px 0px 10px' type="submit" name="buy_posted_coin" value="구매" /> 
+									<input style='padding : 0px 10px 0px 10px' type="submit" name="buy_posted_coin" value="구매{{ document.post_index }}" /> 
+									<input type="hidden" name="post_index" value="{{ document.post_index }}" />
 								</div>
 							</section>
-
 						</div>
 						{% endfor %}
 					</div>
 				</div>
 			</div>
-
-
-
 
 			{% if page > 1 %}
 			<a href="{{ url_for('buycoin', page=page-1) }}">이전 페이지</a>
