@@ -207,10 +207,10 @@ def buycoin():
     has_more = len(post_list) > end_index
     
     if request.method == 'POST':
-        initial_buy = int(request.form['initialbuy'])   #구매하고자하는 초기 코인 개수
         
         #마켓플레이스의 초기 코인을 구매하는 경우
-        if 'buy_initial_coin' in request.form:    
+        if 'buy_initial_coin' in request.form:
+            initial_buy = int(request.form['initialbuy'])   #구매하고자하는 초기 코인 개수
             if initial_buy <1:
                 flash("1개 이상의 코인을 입력해주세요.")
                 return render_template('buycoin.html', username=username, page=page, initial_number=initial_number, initial_price=initial_price, documents=paginated_documents, has_more=has_more, coin=coin, money=money)
