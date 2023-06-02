@@ -11,6 +11,9 @@ initialCoin = db["initialCoin"]
 #유저 posted coin db
 postedCoin = db["postedCoin"]
 
+#거래 history db
+history = db["history"]
+
 app = Flask(__name__)
 app.secret_key = "SECRET_KEY"
 
