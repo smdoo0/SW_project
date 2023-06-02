@@ -154,6 +154,11 @@ def sellcoin():
         # postedCoin db에 정보 저장
         coin_info = {"sellername": username, "quantity": number, "price": price, "total_price": total_price}
         postedCoin.insert_one(coin_info)
+        
+        # post한 유저 코인 개수 업데이트
+        user_coins -= number
+        users.update_one({"_id": username}, {"$set": { "coin": user_coins} })
+        
         flash("POST Success!")
 
         return render_template('sellcoin.html', username=username, user_coins=user_coins)
